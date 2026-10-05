@@ -11,13 +11,16 @@ proposes trip dates, and adds comments, links and photos.
 
 ## 📍 Current status (read this first)
 
-- **Where we are (6 Oct 2026):** Phases 3, 4 and 6 are built. **Update 3** is published to
-  **https://yearend-trip.expo.app**: browser tab renamed **"Welcome 2027"**, plus **Phase 6**
-  (photos and comments on each place, and a trip-wide Group chat).
-- Rahul says DB update 002 has been run. To confirm, run the read-only check
-  [`supabase/check_002.sql`](supabase/check_002.sql): both rows should say ✅.
-- **Next action:** Rahul tests the signed-in features (Places, place detail with photo upload & comments,
-  Group chat, removing the "test" member). After that comes **Phase 7 (polish)**, and then friends get the link.
+- **Where we are (6 Oct 2026):** **Phase 7 is built** and published to **https://yearend-trip.expo.app**
+  (Update 5): password reset, email codes, 📌 pin final plan, 🎒 packing list, ⚠️ leave-days warning,
+  🔔 push notifications. Code is backed up in **local Git** (first commit `265396a`).
+- **⚠️ Waiting on Rahul (setup checklist, in this order):**
+  1. Run [`supabase/003_pin_packing_push.sql`](supabase/003_pin_packing_push.sql) in the Supabase SQL Editor
+  2. Email: follow [`docs/EMAIL_SETUP.md`](docs/EMAIL_SETUP.md) (Gmail app password → Supabase SMTP → code templates)
+  3. Push: follow [`docs/PUSH_SETUP.md`](docs/PUSH_SETUP.md) (deploy `send-push` → 4 secrets → vault secret)
+  4. GitHub: create a free account (if needed) and an **empty private** repo → send Claude the URL to push
+- **Then:** Rahul beta-tests with 2–3 friends and comes back with feedback and reviews.
+- **Later (optional):** overall UI polish from Figma screens that Rahul will provide.
 - **Plan agreed with Rahul:** friends get the link only once the app is complete.
 
 ---
@@ -122,6 +125,8 @@ Shake the phone, then tap **Reload** if the app gets stuck.
 1. `supabase/schema.sql`: all tables, security rules, photo bucket ✅ run 6 Oct
 2. `supabase/002_organiser_removes_members.sql`: organiser removes members + cleanup trigger ✅ run by Rahul
    (confirm with the read-only `supabase/check_002.sql`)
+3. `supabase/003_pin_packing_push.sql`: pin columns, `packing_items`, `push_subscriptions`, push triggers,
+   extended cleanup trigger ⏳ waiting to be run
 
 **Database functions called from the app:** `create_trip(name)` and `join_trip(code)`
 
@@ -238,13 +243,57 @@ Never put the **secret / service_role** key in the app or in Git.
 - ⚠️ Photo upload and comments were checked in the browser only for their empty states (they need a signed-in
   account). Rahul to test with real data.
 
-### Phase 7: Polish (target: by 30 Oct)
-- [ ] Loading spinners, error messages, empty states
-- [ ] Pull-to-refresh (and optionally live updates with Supabase Realtime)
-- [ ] App name, icon and splash screen in `app.json`
-- [ ] Edit / delete my own items
-- [ ] Run `npx expo lint`, `npx tsc --noEmit` and `npx expo-doctor`
-- [ ] Set up Git and push to a private GitHub repo
+### Phase 7: Polish + launch features ✅ built (6 Oct 2026, Update 5). Rahul's chosen scope:
+password reset, Git backup, email service, push notifications, pin button, packing list, leave-days warning.
+
+- [x] **Git backup.** Installed Git 2.55 via winget (Rahul approved the admin prompt). Repo initialised on
+      branch `main` with local config `user.name RahulSBiju`. First commit `265396a`.
+      Checked that `.env.local`, `push-keys.local.txt` and `dist/` are **not** committed.
+  - [ ] Push to a private GitHub repo. Needs Rahul's GitHub account and an empty private repo URL.
+- [x] **Password reset**, `src/app/forgot-password.tsx` ("Forgot password?" on sign-in)
+  - Email → 6-digit code → code + new password (`verifyOtp` type `recovery`, then `updateUser`)
+  - Sits **outside** the sign-in guards, because entering the code signs you in mid-flow
+- [x] **Email confirmation codes** in `src/app/sign-in.tsx`. If sign-up returns no session (confirmation on),
+      it shows "Enter the code from the email" + "Send a new code". Signing in with an unconfirmed email
+      sends a fresh code. Works whether "Confirm email" is on or off.
+- [x] **Email service**, chosen: **Gmail SMTP with an app password** (free, ~500/day, no domain needed).
+      Resend was ruled out because its free plan only emails your own address without a custom domain.
+      Setup steps + email templates (with `{{ .Token }}` codes): [`docs/EMAIL_SETUP.md`](docs/EMAIL_SETUP.md)
+- [x] **📌 Pin the final plan** (organiser only; DB columns `trips.pinned_location_id/pinned_start/pinned_end`)
+  - Place page: "📌 Pin as final destination" / "Unpin". Places list shows "📌 Final destination".
+  - Best dates: "📌 Lock in these dates" per stretch, "📌 Locked in" when pinned
+  - Trip page top: **"🎉 IT'S DECIDED!"** card (`src/components/trip/final-plan-card.tsx`) with Unpin for the organiser.
+    Before anything is pinned, the organiser sees a hint.
+  - Helpers in `src/lib/pin.ts` detect "not organiser" / "update 003 not run"
+- [x] **🎒 Packing list**, `src/app/trip/[id]/packing.tsx` (new table `packing_items`)
+  - **Group gear:** everyone sees it; "I'll bring it" / "Unclaim"; packed checkbox; "x/y packed"
+  - **My list:** personal items only the creator can see (enforced by a database rule, not just the app)
+  - The creator or organiser can delete. A removed member's personal items are deleted and their claimed
+    items become unclaimed (the cleanup trigger was extended).
+- [x] **⚠️ Leave-days warning** in Best dates. Each stretch shows "Needs N weekdays off" (Mon–Fri,
+      `weekdayCount` in `src/lib/dates.ts`) and "⚠️ Not enough leave: Priya (2)". Public holidays aren't
+      counted (noted in the card). Checked: 24–28 Dec 2026 = 3 weekdays ✓
+- [x] **🔔 Push notifications** (web push; works on Android Chrome and desktop, and on iPhone only from a
+      Home-Screen-installed app on iOS 16.4+)
+  - App: `src/lib/push.ts` + "🔔 Notifications" card on My Trips (`src/components/notifications-card.tsx`)
+  - Service worker `public/sw.js` shows notifications and opens the right screen on tap
+  - DB: `push_subscriptions` table + `notify_push()` trigger (via `pg_net`) on new places, comments,
+    members joining, and pinning. The secret is read from **Supabase Vault** (`push_webhook_secret`).
+  - Server: Edge Function `supabase/functions/send-push/index.ts` builds the message, notifies everyone except
+    the person who acted, and removes dead subscriptions (404/410)
+  - VAPID keys generated with `web-push`. The public key is in `src/lib/config.ts`. The private key is **only**
+    in `push-keys.local.txt` (gitignored) → Rahul pastes it into Supabase secrets.
+  - Setup: [`docs/PUSH_SETUP.md`](docs/PUSH_SETUP.md)
+- [x] Shared `NavCard` component for the trip page links (Places, Group chat, Packing list)
+- [x] Sign-in heading renamed to "Welcome 2027"
+- [x] `tsconfig.json` / `eslint.config.js` now exclude `supabase/functions` (Deno code) and `public/sw.js`
+- [x] `npx tsc --noEmit` ✅ and `npx expo lint` ✅ both clean
+- [x] DB update **003**: [`supabase/003_pin_packing_push.sql`](supabase/003_pin_packing_push.sql). The app shows
+      friendly "needs update 003" messages until it's run, so deploying first was safe.
+- ⚠️ Previewed with sample data only (Best dates warnings, pin card, notifications card, reset screen).
+  Pinning, packing, email codes and push all need Rahul's setup steps plus signed-in testing.
+- Not done in Phase 7 (could come with the Figma UI polish): live updates (Realtime), editing your own
+  places/comments, renaming/deleting trips, changing your display name.
 
 ### Phase 8: Deployment (started early, 6 Oct 2026, so friends can test)
 - [x] Chose **EAS Hosting** (Expo's own free web hosting, `https://<name>.expo.app`) over Netlify/Vercel
@@ -269,6 +318,8 @@ Never put the **secret / service_role** key in the app or in Git.
       Checked on the live site.
 - [x] **Update 2 deployed (6 Oct 2026):** Best dates, organiser removes members, QR/link invites,
       reordered trip page, Places & votes (Phase 4)
+- [x] **Update 5 deployed (6 Oct 2026): Phase 7.** Password reset, email codes, pin, packing list,
+      leave-days warning, push notifications (needs DB update 003 + the setup in docs/)
 - [x] **Update 4 deployed (6 Oct 2026): app icon** from Rahul's SVG (luggage + umbrella)
   - Master file: `assets/images/app-icon.svg`. All PNGs are generated from it with `sharp`, run from a scratch
     folder so it isn't a project dependency. To change the icon later, replace the SVG and regenerate.
@@ -291,10 +342,10 @@ Never put the **secret / service_role** key in the app or in Git.
 - [ ] Beta test with 2–3 friends, fix issues, then invite everyone
 
 ### Phase 9: After launch (nice-to-haves)
-- [ ] Custom email service (e.g. Resend, free tier) so "Confirm email" and password reset can be switched on
-- [ ] Push notifications ("Priya added a new place")
-- [ ] Final decision: lock in the destination and dates
-- [ ] Budget / expense splitting, maps, packing list
+- [x] ~~Custom email service~~, ~~Push notifications~~, ~~Lock in destination & dates~~, ~~Packing list~~ → moved into Phase 7
+- [ ] UI polish from Figma screens (Rahul will provide them)
+- [ ] Live updates (Supabase Realtime), edit own places/comments, rename/delete trip, change display name
+- [ ] Budget / expense splitting, maps
 
 ---
 
