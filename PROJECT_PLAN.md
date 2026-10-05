@@ -16,12 +16,15 @@ proposes trip dates, and adds comments, links and photos.
   🔔 push notifications. Code is backed up in **local Git** (first commit `265396a`).
 - **Setup checklist:**
   1. ✅ DB update 003 run by Rahul. Confirmed: pin columns, `packing_items` and `push_subscriptions` respond.
-  2. ⏳ Email + 3. ⏳ Push: Rahul couldn't open the `.md` guides, so both are combined into one HTML page,
-     **[`docs/setup-guide.html`](docs/setup-guide.html)** (double-click to open in a browser). It has 11 tickable
-     steps, Copy buttons, and a webhook secret generated in the browser and pre-filled into the vault SQL. The `.md`
-     versions stay as the source text.
-  4. ⏳ GitHub repo created by Rahul: **https://github.com/RahulSBiju/welcome2027** (remote `origin`). First push
-     was waiting on Rahul's browser sign-in (Git Credential Manager).
+  2. ✅ Email + 3. ✅ Push: Rahul completed every step in **[`docs/setup-guide.html`](docs/setup-guide.html)**
+     (one HTML page combining both `.md` guides, because Rahul couldn't open `.md` files). Verified from outside:
+     "Confirm email" is ON, and the `send-push` function is deployed with JWT verification off (it returns its own
+     401 for a wrong secret). Can't be verified from outside: Gmail SMTP, email templates, vault secret.
+     Rahul's real-world tests (forgot password, push from the test account) will confirm those.
+  4. ✅ GitHub: **https://github.com/RahulSBiju/welcome2027**. All commits pushed, `main` tracks `origin/main`.
+     The browser sign-in pop-up never completed, so it used **device-code sign-in** instead:
+     `git -c credential.gitHubAuthModes=device -c credential.guiPrompt=false push`. The credential is now
+     saved, so future pushes are just `git push`.
 - **Then:** Rahul beta-tests with 2–3 friends and comes back with feedback and reviews.
 - **Later (optional):** overall UI polish from Figma screens that Rahul will provide.
 - **Plan agreed with Rahul:** friends get the link only once the app is complete.
