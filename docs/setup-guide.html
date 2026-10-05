@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Welcome 2027 Setup</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --card: #ffffff; --text: #16181d; --muted: #5d6470; --border: #dfe2e7;
+    --primary: #208aef; --primary-soft: #e7f2fe; --ok: #1f9d55; --warn-bg: #fff6e0; --warn: #8a5a00;
+    --code-bg: #f1f3f6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1114; --card: #1a1d22; --text: #eef0f3; --muted: #a3a9b3; --border: #2e333a;
+      --primary: #4aa8ff; --primary-soft: #16283b; --ok: #3ecf7f; --warn-bg: #3a2e12; --warn: #ffd27a;
+      --code-bg: #23272e;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 24px 16px 64px; }
+  header { margin-bottom: 20px; }
+  h1 { font-size: 28px; margin: 0 0 4px; }
+  .sub { color: var(--muted); margin: 0; }
+  .progress { margin-top: 16px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; }
+  .bar { height: 8px; background: var(--code-bg); border-radius: 99px; overflow: hidden; margin-top: 8px; }
+  .bar > div { height: 100%; width: 0; background: var(--ok); transition: width .3s; }
+  .tabs { display: flex; gap: 8px; margin: 20px 0 12px; flex-wrap: wrap; }
+  .tabs a { text-decoration: none; color: var(--text); background: var(--card); border: 1px solid var(--border);
+            padding: 8px 14px; border-radius: 99px; font-weight: 600; font-size: 14px; }
+  section.part { margin-top: 28px; }
+  h2 { font-size: 21px; margin: 0 0 4px; }
+  .lead { color: var(--muted); margin: 0 0 12px; }
+  .step { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 16px; margin: 12px 0; }
+  .step.done { border-color: var(--ok); }
+  .step-head { display: flex; gap: 12px; align-items: flex-start; }
+  .step-head input { width: 22px; height: 22px; margin-top: 3px; accent-color: var(--ok); flex: none; cursor: pointer; }
+  .step-head h3 { margin: 0; font-size: 17px; }
+  .step.done .step-head h3 { text-decoration: line-through; color: var(--muted); }
+  .step-body { margin: 10px 0 0 34px; }
+  .step-body ol, .step-body ul { padding-left: 20px; margin: 8px 0; }
+  .step-body li { margin: 4px 0; }
+  .path { font-weight: 600; background: var(--primary-soft); padding: 1px 6px; border-radius: 6px; }
+  table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 15px; }
+  td { border-top: 1px solid var(--border); padding: 8px 6px; vertical-align: middle; }
+  td:first-child { color: var(--muted); width: 38%; }
+  code, pre { font-family: ui-monospace, "Cascadia Code", Consolas, monospace; font-size: 14px; }
+  code { background: var(--code-bg); padding: 1px 6px; border-radius: 5px; word-break: break-all; }
+  .copybox { position: relative; background: var(--code-bg); border-radius: 10px; margin: 8px 0; }
+  .copybox pre { margin: 0; padding: 12px 84px 12px 12px; white-space: pre-wrap; word-break: break-word; }
+  .copybox .label { font-size: 12px; font-weight: 700; color: var(--muted); padding: 8px 12px 0; text-transform: uppercase; letter-spacing: .04em; }
+  button.copy { position: absolute; top: 8px; right: 8px; border: 0; background: var(--primary); color: #fff;
+                font-weight: 600; font-size: 13px; padding: 6px 12px; border-radius: 8px; cursor: pointer; }
+  button.copy.inline { position: static; margin-left: 6px; padding: 3px 10px; font-size: 12px; }
+  button.copy.ok { background: var(--ok); }
+  .note { background: var(--warn-bg); color: var(--warn); border-radius: 10px; padding: 10px 12px; margin: 10px 0; font-size: 15px; }
+  .tip { color: var(--muted); font-size: 14px; }
+  a { color: var(--primary); }
+  .done-badge { color: var(--ok); font-weight: 700; }
+  @media (max-width: 520px) { .step-body { margin-left: 0; } td:first-child { width: 42%; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🌴 Welcome 2027: setup guide</h1>
+    <p class="sub">Two one-time setups in the Supabase dashboard: <b>email</b> (password reset and sign-up codes) and
+      <b>push notifications</b>. Tick each step as you go; your ticks are remembered on this device.</p>
+    <div class="progress"><span id="progress-text">0 of 0 steps done</span><div class="bar"><div id="bar"></div></div></div>
+  </header>
+
+  <nav class="tabs">
+    <a href="#email">✉️ Part 1: Email</a>
+    <a href="#push">🔔 Part 2: Push notifications</a>
+  </nav>
+
+  <p class="tip">✅ Already done: database update 003 is confirmed, and the app is live at
+    <a href="https://yearend-trip.expo.app" target="_blank" rel="noopener">yearend-trip.expo.app</a>.
+    Open the Supabase dashboard at <a href="https://supabase.com/dashboard" target="_blank" rel="noopener">supabase.com/dashboard</a>
+    → project <b>"Year End Vacation Planner"</b>.</p>
+
+  <!-- ================= EMAIL ================= -->
+  <section class="part" id="email">
+    <h2>✉️ Part 1: Email (about 10 min)</h2>
+    <p class="lead">Supabase's built-in sender only manages a few emails an hour, so we send through your Gmail
+      instead. It's free and handles about 500 a day. Resend wasn't used because its free plan only emails your own address.</p>
+
+    <div class="step" data-step="e1">
+      <div class="step-head"><input type="checkbox" aria-label="Done"><h3>1. Create a Gmail “app password”</h3></div>
+      <div class="step-body">
+        <p>A separate 16-character password just for Supabase. Your real Gmail password is never shared.</p>
+        <ol>
+          <li>Open <a href="https://myaccount.google.com/security" target="_blank" rel="noopener">myaccount.google.com/security</a>
+            and turn on <b>2-Step Verification</b> if it's off (Google requires it).</li>
+          <li>Open <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener">myaccount.google.com/apppasswords</a>.</li>
+          <li>App name: <code>Welcome 2027</code> → <b>Create</b>.</li>
+          <li>Copy the 16-character password it shows (keep the tab open for the next step).</li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="step" data-step="e2">
+      <div class="step-head"><input type="checkbox" aria-label="Done"><h3>2. Send Supabase emails through Gmail</h3></div>
+      <div class="step-body">
+        <p>Go to <span class="path">Authentication → Emails → SMTP Settings</span> → turn on <b>Enable custom SMTP</b>:</p>
+        <table>
+          <tr><td>Sender email</td><td>your Gmail address</td></tr>
+          <tr><td>Sender name</td><td><code>Welcome 2027</code><button class="copy inline" data-copy="Welcome 2027">Copy</button></td></tr>
+          <tr><td>Host</td><td><code>smtp.gmail.com</code><button class="copy inline" data-copy="smtp.gmail.com">Copy</button></td></tr>
+          <tr><td>Port</td><td><code>465</code><button class="copy inline" data-copy="465">Copy</button></td></tr>
+          <tr><td>Username</td><td>your Gmail address</td></tr>
+          <tr><td>Password</td><td>the 16-character app password from step 1</td></tr>
+        </table>
+        <p>Click <b>Save</b>. Then <span class="path">Authentication → Rate Limits</span> → <b>Emails per hour</b> = <code>30</code> → Save.</p>
+      </div>
+    </div>
+
+    <div class="step" data-step="e3">
+      <div class="step-head"><input type="checkbox" aria-label="Done"><h3>3. Put the code in the emails</h3></div>
+      <div class="step-body">
+        <p>The app asks people to type a code from the email. Go to <span class="path">Authentication → Emails → Templates</span>.</p>
+        <p><b>“Confirm signup”</b> template: replace the subject and body with:</p>
+        <div class="copybox"><div class="label">Subject</div><pre>Your Welcome 2027 code: {{ .Token }}</pre><button class="copy">Copy</button></div>
+        <div class="copybox"><div class="label">Body</div><pre>&lt;h2&gt;Welcome to the trip planning! 🌴&lt;/h2&gt;
+&lt;p&gt;Enter this code in the app to confirm your email:&lt;/p&gt;
+&lt;p style="font-size:28px;font-weight:bold;letter-spacing:6px"&gt;{{ .Token }}&lt;/p&gt;
+&lt;p&gt;If you didn't sign up, you can ignore this email.&lt;/p&gt;</pre><button class="copy">Copy</button></div>
+        <p><b>“Reset password”</b> template:</p>
+        <div class="copybox"><div class="label">Subject</div><pre>Your Welcome 2027 password reset code: {{ .Token }}</pre><button class="copy">Copy</button></div>
+        <div class="copybox"><div class="label">Body</div><pre>&lt;h2&gt;Reset your password 🔑&lt;/h2&gt;
+&lt;p&gt;Enter this code in the app to set a new password:&lt;/p&gt;
+&lt;p style="font-size:28px;font-weight:bold;letter-spacing:6px"&gt;{{ .Token }}&lt;/p&gt;
+&lt;p&gt;If you didn't ask for this, you can ignore this email. Your password won't change.&lt;/p&gt;</pre><button class="copy">Copy</button></div>
+        <p>Click <b>Save</b> on each template.</p>
+      </div>
+    </div>
+
+    <div class="step" data-step="e4">
+      <div class="step-head"><input type="checkbox" aria-label="Done"><h3>4. Set the Site URL</h3></div>
+      <div class="step-body">
+        <p><span class="path">Authentication → URL Configuration</span> → <b>Site URL</b>:</p>
+        <div class="copybox"><pre>https://yearend-trip.expo.app</pre><button class="copy">Copy</button></div>
+        <p>Save.</p>
+      </div>
+    </div>
+
+    <div class="step" data-step="e5">
+      <div class="step-head"><input type="checkbox" aria-label="Done"><h3>5. Turn email confirmation back on</h3></div>
+      <div class="step-body">
+        <p><span class="path">Authentication → Sign In / Providers → Email</span> → turn <b>Confirm email</b> ON → Save.</p>
+        <p class="tip">New friends will then get a code after signing up. Existing accounts aren't affected.</p>
+      </div>
+    </div>
+
+    <div class="step" data-step="e6">
+      <div class="step-head"><input type="checkbox" aria-label="Done"><h3>6. Test it</h3></div>
+      <div class="step-body">
+        <ol>
+          <li>Open the app (signed out) → <b>Forgot password?</b> → enter your email → <b>Send reset code</b>.</li>
+          <li>The email should arrive within a minute. The first time, check <b>Spam</b> and mark it “Not spam”.</li>
+          <li>Enter the code and a new password, and you're signed in. ✅</li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= PUSH ================= -->
+  <section class="part" id="push">
+    <h2>🔔 Part 2: Push notifications (about 15 min)</h2>
+    <p class="lead">The app side and the database are ready. This part sets up the small server function that
+      actually sends the notifications.</p>
+
+    <div class="step" data-step="p1">
+      <div class="step-head"><input type="checkbox" aria-label="Done"><h3>1. Deploy the “send-push” Edge Function</h3></div>
+      <div class="step-body">
+        <ol>
+          <li>Supabase → <span class="path">Edge Functions</span> → <b>Deploy a new function</b> → <b>Via Editor</b>.</li>
+          <li>Function name: <code>send-push</code><button class="copy inline" data-copy="send-push">Copy</button> (exactly this).</li>
+          <li>Delete the sample code and paste in the whole file
+            <code>vacation-planner\supabase\functions\send-push\index.ts</code>.
+            <span class="tip">To open it, right-click the file → <b>Open with → Notepad</b> → Ctrl+A, Ctrl+C.</span></li>
+          <li>Click <b>Deploy function</b>.</li>
+          <li>Open the function's <b>Details/Settings</b>, turn <b>OFF “Verify JWT”</b> (it may say “Enforce JWT verification”), and save.</li>
+        </ol>
+        <div class="note">Turning off JWT is safe here. The database calls the function with its own secret (steps 2–3), and any other caller is rejected.</div>
+      </div>
+    </div>
+
+    <div class="step" data-step="p2">
+      <div class="step-head"><input type="checkbox" aria-label="Done"><h3>2. Add the function's 4 secrets</h3></div>
+      <div class="step-body">
+        <p>Supabase → <span class="path">Edge Functions → Secrets</span> → add each name + value:</p>
+        <table>
+          <tr><td><code>VAPID_PUBLIC_KEY</code><button class="copy inline" data-copy="VAPID_PUBLIC_KEY">Copy</button></td>
+              <td>this public key:<div class="copybox"><pre>BNJ8zxdZOSASqdyfl2wSficLaGjiDKic_TW_iZuTfb3TUNTx5C7FkFoH-EziUPpdm23pWiAY358Z2kVKmHSqpA0</pre><button class="copy">Copy</button></div></td></tr>
+          <tr><td><code>VAPID_PRIVATE_KEY</code><button class="copy inline" data-copy="VAPID_PRIVATE_KEY">Copy</button></td>
+              <td>open <code>vacation-planner\push-keys.local.txt</code> with <b>Notepad</b> and copy the value after
+                <code>VAPID_PRIVATE_KEY=</code>. 🔒 Keep it private: it isn't in this page or on GitHub.</td></tr>
+          <tr><td><code>VAPID_SUBJECT</code><button class="copy inline" data-copy="VAPID_SUBJECT">Copy</button></td>
+              <td><code>mailto:</code> followed by your email, e.g. <code>mailto:you@gmail.com</code></td></tr>
+          <tr><td><code>PUSH_WEBHOOK_SECRET</code><button class="copy inline" data-copy="PUSH_WEBHOOK_SECRET">Copy</button></td>
+              <td>a long random password. Make one here:
+                <div class="copybox"><pre id="secret">(generating…)</pre><button class="copy" data-target="secret">Copy</button></div>
+                <span class="tip">You'll paste the same value again in step 3. It was made in your browser and isn't saved anywhere.</span></td></tr>
+        </table>
+        <p class="tip"><code>SUPABASE_URL</code> and <code>SUPABASE_SERVICE_ROLE_KEY</code> are provided automatically; don't add them.</p>
+      </div>
+    </div>
+
+    <div class="step" data-step="p3">
+      <div class="step-head"><input type="checkbox" aria-label="Done"><h3>3. Give the database the same secret</h3></div>
+      <div class="step-body">
+        <p>Supabase → <span class="path">SQL Editor</span> → <b>New query</b> → paste this (it already contains the secret
+          generated above) → <b>Run</b>:</p>
+        <div class="copybox"><pre id="vault-sql">select vault.create_secret('(generating…)', 'push_webhook_secret');</pre><button class="copy" data-target="vault-sql">Copy</button></div>
+        <div class="note">⚠️ If you reload this page, a <b>new</b> secret is generated. Make sure steps 2 and 3 use the <b>same</b> value.
+          If they ever end up different, run this with the value you saved in step 2:<br>
+          <code>select vault.update_secret((select id from vault.secrets where name = 'push_webhook_secret'), 'YOUR-SECRET');</code></div>
+      </div>
+    </div>
+
+    <div class="step" data-step="p4">
+      <div class="step-head"><input type="checkbox" aria-label="Done"><h3>4. Turn on notifications on your phone</h3></div>
+      <div class="step-body">
+        <ul>
+          <li><b>Android:</b> open <a href="https://yearend-trip.expo.app" target="_blank" rel="noopener">the app</a> in Chrome → My Trips →
+            <b>🔔 Turn on notifications</b> → Allow.</li>
+          <li><b>iPhone</b> (iOS 16.4+): open it in Safari → <b>Share → Add to Home Screen</b> → open the app <b>from the
+            home-screen icon</b> → 🔔 Turn on notifications → Allow. Apple only allows notifications for Home Screen apps.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="step" data-step="p5">
+      <div class="step-head"><input type="checkbox" aria-label="Done"><h3>5. Test it</h3></div>
+      <div class="step-body">
+        <ol>
+          <li>On your laptop, sign in as the <b>test</b> account (e.g. an Incognito window).</li>
+          <li>Post a message in your trip's <b>💬 Group chat</b>.</li>
+          <li>Your phone should buzz within a few seconds: <i>“💬 test in Group chat: …”</i> 🎉</li>
+        </ol>
+        <p><b>Nothing arrived?</b></p>
+        <ul>
+          <li>Supabase → Edge Functions → <code>send-push</code> → <b>Logs</b>. A <code>401</code> means the secrets in steps 2 and 3 don't match.</li>
+          <li>SQL Editor: <code>select * from net._http_response order by created desc limit 5;</code> shows the database's recent calls.</li>
+          <li>Check the phone allows notifications for Chrome or the app in its settings.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="step" style="border-style:dashed">
+      <h3 style="margin:0 0 6px">What sends a notification</h3>
+      <p class="tip" style="margin:0 0 8px">You're never notified about your own actions.</p>
+      <table>
+        <tr><td>New place suggested</td><td>📍 Priya suggested Gokarna</td></tr>
+        <tr><td>Comment on a place</td><td>💬 Arjun on Gokarna: looks amazing…</td></tr>
+        <tr><td>Group chat message</td><td>💬 Arjun in Group chat: budget ~15k?</td></tr>
+        <tr><td>Someone joins</td><td>👋 Meera joined the trip!</td></tr>
+        <tr><td>Organiser pins the plan</td><td>📌 It's decided, we're going to Gokarna · dates locked: 24 Dec – 28 Dec! 🎉</td></tr>
+      </table>
+    </div>
+  </section>
+</div>
+
+<script>
+  // --- A random webhook secret, made in this browser (never sent or stored) ---
+  (function () {
+    var bytes = new Uint8Array(24);
+    crypto.getRandomValues(bytes);
+    var secret = Array.from(bytes, function (b) { return b.toString(16).padStart(2, '0'); }).join('');
+    document.getElementById('secret').textContent = secret;
+    document.getElementById('vault-sql').textContent =
+      "select vault.create_secret('" + secret + "', 'push_webhook_secret');";
+  })();
+
+  // --- Copy buttons ---
+  document.querySelectorAll('button.copy').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var text = btn.dataset.copy;
+      if (!text && btn.dataset.target) text = document.getElementById(btn.dataset.target).textContent;
+      if (!text) text = btn.parentElement.querySelector('pre').textContent;
+      var done = function () {
+        var old = btn.textContent;
+        btn.textContent = 'Copied ✓'; btn.classList.add('ok');
+        setTimeout(function () { btn.textContent = old; btn.classList.remove('ok'); }, 1500);
+      };
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(done);
+      } else {
+        var ta = document.createElement('textarea');
+        ta.value = text; document.body.appendChild(ta); ta.select();
+        try { document.execCommand('copy'); done(); } catch (e) {}
+        document.body.removeChild(ta);
+      }
+    });
+  });
+
+  // --- Checkboxes + progress (remembered on this device only) ---
+  var KEY = 'welcome2027-setup-steps';
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) {}
+  var steps = document.querySelectorAll('.step[data-step]');
+  function update() {
+    var done = 0;
+    steps.forEach(function (s) { if (s.querySelector('input').checked) done++; });
+    document.getElementById('progress-text').innerHTML =
+      done === steps.length ? '<span class="done-badge">All ' + done + ' steps done 🎉</span>' : done + ' of ' + steps.length + ' steps done';
+    document.getElementById('bar').style.width = (100 * done / steps.length) + '%';
+  }
+  steps.forEach(function (step) {
+    var box = step.querySelector('input');
+    var id = step.dataset.step;
+    box.checked = !!saved[id];
+    step.classList.toggle('done', box.checked);
+    box.addEventListener('change', function () {
+      saved[id] = box.checked;
+      step.classList.toggle('done', box.checked);
+      try { localStorage.setItem(KEY, JSON.stringify(saved)); } catch (e) {}
+      update();
+    });
+  });
+  update();
+</script>
+</body>
+</html>

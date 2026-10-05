@@ -14,11 +14,14 @@ proposes trip dates, and adds comments, links and photos.
 - **Where we are (6 Oct 2026):** **Phase 7 is built** and published to **https://yearend-trip.expo.app**
   (Update 5): password reset, email codes, 📌 pin final plan, 🎒 packing list, ⚠️ leave-days warning,
   🔔 push notifications. Code is backed up in **local Git** (first commit `265396a`).
-- **⚠️ Waiting on Rahul (setup checklist, in this order):**
-  1. Run [`supabase/003_pin_packing_push.sql`](supabase/003_pin_packing_push.sql) in the Supabase SQL Editor
-  2. Email: follow [`docs/EMAIL_SETUP.md`](docs/EMAIL_SETUP.md) (Gmail app password → Supabase SMTP → code templates)
-  3. Push: follow [`docs/PUSH_SETUP.md`](docs/PUSH_SETUP.md) (deploy `send-push` → 4 secrets → vault secret)
-  4. GitHub: create a free account (if needed) and an **empty private** repo → send Claude the URL to push
+- **Setup checklist:**
+  1. ✅ DB update 003 run by Rahul. Confirmed: pin columns, `packing_items` and `push_subscriptions` respond.
+  2. ⏳ Email + 3. ⏳ Push: Rahul couldn't open the `.md` guides, so both are combined into one HTML page,
+     **[`docs/setup-guide.html`](docs/setup-guide.html)** (double-click to open in a browser). It has 11 tickable
+     steps, Copy buttons, and a webhook secret generated in the browser and pre-filled into the vault SQL. The `.md`
+     versions stay as the source text.
+  4. ⏳ GitHub repo created by Rahul: **https://github.com/RahulSBiju/welcome2027** (remote `origin`). First push
+     was waiting on Rahul's browser sign-in (Git Credential Manager).
 - **Then:** Rahul beta-tests with 2–3 friends and comes back with feedback and reviews.
 - **Later (optional):** overall UI polish from Figma screens that Rahul will provide.
 - **Plan agreed with Rahul:** friends get the link only once the app is complete.
@@ -36,6 +39,8 @@ proposes trip dates, and adds comments, links and photos.
 | Expo SDK | 57 (Expo Router, React Native 0.86, TypeScript) |
 | Test phone | Android, via the **Expo Go** app |
 | **Live app (share this)** | **https://yearend-trip.expo.app** |
+| Code backup (GitHub) | https://github.com/RahulSBiju/welcome2027 (branch `main`) |
+| Setup guide (email + push) | `docs/setup-guide.html` (open in any browser) |
 | Expo account / project | `@rahulsbiju/vacation-planner` (EAS project ID `2feb4c16-6c84-4ec0-9d12-df108cc113db`) |
 | Hosting dashboard | https://expo.dev/projects/2feb4c16-6c84-4ec0-9d12-df108cc113db/hosting/deployments |
 
@@ -126,7 +131,7 @@ Shake the phone, then tap **Reload** if the app gets stuck.
 2. `supabase/002_organiser_removes_members.sql`: organiser removes members + cleanup trigger ✅ run by Rahul
    (confirm with the read-only `supabase/check_002.sql`)
 3. `supabase/003_pin_packing_push.sql`: pin columns, `packing_items`, `push_subscriptions`, push triggers,
-   extended cleanup trigger ⏳ waiting to be run
+   extended cleanup trigger ✅ run by Rahul (tables/columns confirmed via the API)
 
 **Database functions called from the app:** `create_trip(name)` and `join_trip(code)`
 
