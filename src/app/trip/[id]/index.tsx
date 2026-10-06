@@ -39,7 +39,7 @@ export default function TripScreen() {
       supabase.from('trips').select('*').eq('id', id).maybeSingle(),
       supabase
         .from('trip_members')
-        .select('user_id, role, leave_days, profiles(display_name)')
+        .select('user_id, role, leave_days, profiles!user_id(display_name)')
         .eq('trip_id', id)
         .order('joined_at'),
       supabase

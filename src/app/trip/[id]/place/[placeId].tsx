@@ -20,7 +20,7 @@ function fetchPlaceAndTrip(placeId: string, tripId: string) {
   return Promise.all([
     supabase
       .from('locations')
-      .select('id, trip_id, name, description, link_url, added_by, created_at, profiles(display_name), location_votes(user_id)')
+      .select('id, trip_id, name, description, link_url, added_by, created_at, profiles!added_by(display_name), location_votes(user_id)')
       .eq('id', placeId)
       .maybeSingle(),
     supabase.from('trips').select('*').eq('id', tripId).maybeSingle(),

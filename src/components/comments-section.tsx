@@ -26,7 +26,7 @@ type Props = {
 function fetchComments(tripId: string, targetType: string, targetId?: string) {
   const query = supabase
     .from('comments')
-    .select('id, user_id, body, created_at, profiles(display_name)')
+    .select('id, user_id, body, created_at, profiles!user_id(display_name)')
     .eq('trip_id', tripId)
     .eq('target_type', targetType)
     .order('created_at');

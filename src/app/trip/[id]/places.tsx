@@ -44,7 +44,7 @@ export default function PlacesScreen() {
       supabase
         .from('locations')
         .select(
-          'id, trip_id, name, description, link_url, added_by, created_at, profiles(display_name), location_votes(user_id), location_images(count)'
+          'id, trip_id, name, description, link_url, added_by, created_at, profiles!added_by(display_name), location_votes(user_id), location_images(count)'
         )
         .eq('trip_id', tripId)
         .order('created_at'),

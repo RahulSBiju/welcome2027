@@ -31,7 +31,7 @@ export default function PackingScreen() {
   const loadData = useCallback(async () => {
     const [itemsResult, membersResult, tripResult] = await Promise.all([
       supabase.from('packing_items').select('*').eq('trip_id', tripId).order('created_at'),
-      supabase.from('trip_members').select('user_id, role, leave_days, profiles(display_name)').eq('trip_id', tripId),
+      supabase.from('trip_members').select('user_id, role, leave_days, profiles!user_id(display_name)').eq('trip_id', tripId),
       supabase.from('trips').select('created_by').eq('id', tripId).maybeSingle(),
     ]);
     if (itemsResult.error) {

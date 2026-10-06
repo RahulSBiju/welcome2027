@@ -25,6 +25,9 @@ proposes trip dates, and adds comments, links and photos.
      The browser sign-in pop-up never completed, so it used **device-code sign-in** instead:
      `git -c credential.gitHubAuthModes=device -c credential.guiPrompt=false push`. The credential is now
      saved, so future pushes are just `git push`.
+- **Test results (6 Oct 2026):** ✅ password reset works (Gmail email arrived). ✅ push notification arrived when a
+  friend suggested a place. ❌ → ✅ the Places screen then showed *"Could not embed because more than one relationship
+  was found for 'locations' and 'profiles'"*. The place **was saved**; only reading the list failed. Fixed in Update 6.
 - **Then:** Rahul beta-tests with 2–3 friends and comes back with feedback and reviews.
 - **Later (optional):** overall UI polish from Figma screens that Rahul will provide.
 - **Plan agreed with Rahul:** friends get the link only once the app is complete.
@@ -326,6 +329,11 @@ password reset, Git backup, email service, push notifications, pin button, packi
       Checked on the live site.
 - [x] **Update 2 deployed (6 Oct 2026):** Best dates, organiser removes members, QR/link invites,
       reordered trip page, Places & votes (Phase 4)
+- [x] **Update 6 deployed (6 Oct 2026): bug fix, Places list error.** Update 003 added `trips.pinned_location_id`, which
+      created a second path from `locations` to `profiles` (locations ← trips → profiles), so the API refused the
+      ambiguous `profiles(display_name)` embed (error PGRST201). Fix: every profile lookup now names its link:
+      `profiles!added_by(...)` on places and `profiles!user_id(...)` on members and comments. Reproduced and verified
+      against the live API before deploying.
 - [x] **Update 5 deployed (6 Oct 2026): Phase 7.** Password reset, email codes, pin, packing list,
       leave-days warning, push notifications (needs DB update 003 + the setup in docs/)
 - [x] **Update 4 deployed (6 Oct 2026): app icon** from Rahul's SVG (luggage + umbrella)
@@ -358,6 +366,9 @@ password reset, Git backup, email service, push notifications, pin button, packi
 ---
 
 ## Watch-outs
+- **When joining tables in a Supabase query, always name the link**, e.g. `profiles!added_by(display_name)`, not
+  `profiles(display_name)`. Adding a new foreign key later can make the short form ambiguous and break a screen.
+- **After any database update, re-test every screen** (Places broke after 003 even though 003 didn't touch it).
 - **The live link doesn't need Rahul's laptop.** https://yearend-trip.expo.app is hosted by Expo, and the data
   lives in Supabase. Terminal tabs (dev server, deploy) are only needed while building or publishing updates.
 - **Supabase pauses free projects after 7 days without activity.** Restore from the dashboard if needed.
