@@ -1,12 +1,14 @@
 import { router, Stack, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 
-import { NotificationsCard } from '@/components/notifications-card';
+import { HeaderActions } from '@/components/header-actions';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { TripCard } from '@/components/trip-card';
 import { Button } from '@/components/ui/button';
 import { TextField } from '@/components/ui/text-field';
+import { Toast } from '@/components/ui/toast';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useSession } from '@/lib/auth-context';
@@ -31,6 +33,9 @@ export default function MyTripsScreen() {
   const [inviteCode, setInviteCode] = useState('');
   const [joining, setJoining] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
+
+  const [toast, setToast] = useState<{ text: string; isError?: boolean } | null>(null);
+  const hideToast = useCallback(() => setToast(null), []);
 
   const loadData = useCallback(async () => {
     if (!session) return;
@@ -115,15 +120,11 @@ export default function MyTripsScreen() {
     <ThemedView style={styles.flex}>
       <Stack.Screen
         options={{
-          headerRight: () => (
-            <Pressable onPress={() => supabase.auth.signOut()} hitSlop={12}>
-              <ThemedText type="small" style={{ color: theme.primary }}>
-                Sign out
-              </ThemedText>
-            </Pressable>
-          ),
+          headerRight: () =>
+            session ? <HeaderActions userId={session.user.id} onMessage={(text, isError) => setToast({ text, isError })} /> : null,
         }}
       />
+      <Toast message={toast?.text ?? null} isError={toast?.isError} onHide={hideToast} />
 
       <ScrollView
         contentContainerStyle={styles.content}
@@ -147,27 +148,17 @@ export default function MyTripsScreen() {
             </ThemedView>
           )}
 
-          {trips.map((trip) => {
-            const memberCount = trip.trip_members[0]?.count ?? 0;
-            return (
-              <Pressable
+          {session &&
+            trips.map((trip) => (
+              <TripCard
                 key={trip.id}
-                onPress={() => router.push({ pathname: '/trip/[id]', params: { id: trip.id } })}
-                style={({ pressed }) => pressed && styles.pressed}>
-                <ThemedView type="backgroundElement" style={styles.card}>
-                  <ThemedText type="default" style={styles.tripName}>
-                    {trip.name}
-                  </ThemedText>
-                  <ThemedText type="small" themeColor="textSecondary">
-                    {memberCount} {memberCount === 1 ? 'member' : 'members'} · Code {trip.invite_code}
-                  </ThemedText>
-                </ThemedView>
-              </Pressable>
-            );
-          })}
+                trip={trip}
+                memberCount={trip.trip_members[0]?.count ?? 0}
+                myUserId={session.user.id}
+                onChanged={loadData}
+              />
+            ))}
         </View>
-
-        {session && <NotificationsCard userId={session.user.id} />}
 
         {/* Create a trip */}
         <ThemedView type="backgroundElement" style={[styles.card, styles.form]}>
@@ -235,11 +226,5 @@ const styles = StyleSheet.create({
   },
   form: {
     gap: Spacing.three,
-  },
-  tripName: {
-    fontWeight: 600,
-  },
-  pressed: {
-    opacity: 0.7,
   },
 });

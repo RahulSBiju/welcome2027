@@ -28,6 +28,28 @@ proposes trip dates, and adds comments, links and photos.
 - **Test results (6 Oct 2026):** ✅ password reset works (Gmail email arrived). ✅ push notification arrived when a
   friend suggested a place. ❌ → ✅ the Places screen then showed *"Could not embed because more than one relationship
   was found for 'locations' and 'profiles'"*. The place **was saved**; only reading the list failed. Fixed in Update 6.
+- **Rahul's feedback round 1 (7 Oct 2026) → all 6 built in Update 7:**
+  1. ✅ Red ✕ next to a date range → a labelled small **"Reset dates"** button (Members → More details, on your own
+     ranges). The calendar card's hint now points there.
+  2. ✅ **Delete trips from the home screen.** Each trip card shows "Delete trip" (red, organiser only) with a confirm
+     warning that everything is deleted for everyone. Non-organisers get "Leave trip" instead.
+     (`src/components/trip-card.tsx`)
+  3. ✅ **Header icons, top-right of My Trips** (`src/components/header-actions.tsx`):
+     YouTube-style **bell** (outline = off, filled blue = on) toggles push. A toast says **"Push Notifications are
+     active 🔔"** or "…are off" (`src/components/ui/toast.tsx`). On iPhone outside the Home Screen, the toast explains
+     how to install. **Sign out = red power icon.** ⏳ It currently uses a Material placeholder icon; swap in Rahul's SVG
+     when he sends it (`PowerIcon` in `src/components/ui/icons.tsx`). The old 🔔 Notifications card is removed.
+  4. ✅ **Rename trip** on the home screen ("✏️ Rename", organiser only), editing inline with Save/Cancel
+  5. ✅ **Members accordion.** Collapsed by default: initials avatars (a stable colour per person, 👑 on the organiser,
+     a blue ring on you) plus a tertiary **"More details ▾"** that reveals leave days, dates, Reset dates and Remove
+     (`src/components/ui/avatar.tsx`, `src/components/trip/members-section.tsx`)
+  6. ✅ **"📍 Suggest a place"** primary button at the very top of the trip page. It opens Places with the form already
+     open (`?suggest=1`).
+  - Shared button gained `variant="tertiary"`, `size="small"` and `destructive`.
+  - Checked with sample data in the browser: expand/collapse, Reset dates, Remove, Rename (pre-filled), Delete confirm,
+    toast. Not yet tested signed in: the real rename/delete against the database, the bell on a phone.
+  - Note: deleting a trip removes all its rows, but uploaded photo **files** stay in Storage (only their uploader can
+    delete them). That's harmless at this size; it could get a cleanup job later.
 - **Then:** Rahul beta-tests with 2–3 friends and comes back with feedback and reviews.
 - **Later (optional):** overall UI polish from Figma screens that Rahul will provide.
 - **Plan agreed with Rahul:** friends get the link only once the app is complete.
@@ -329,6 +351,8 @@ password reset, Git backup, email service, push notifications, pin button, packi
       Checked on the live site.
 - [x] **Update 2 deployed (6 Oct 2026):** Best dates, organiser removes members, QR/link invites,
       reordered trip page, Places & votes (Phase 4)
+- [x] **Update 7 deployed (7 Oct 2026): feedback round 1.** Reset dates button, delete/leave/rename trips on the home
+      screen, header bell + power icons with toast, members accordion with avatars, "Suggest a place" at the top
 - [x] **Update 6 deployed (6 Oct 2026): bug fix, Places list error.** Update 003 added `trips.pinned_location_id`, which
       created a second path from `locations` to `profiles` (locations ← trips → profiles), so the API refused the
       ambiguous `profiles(display_name)` embed (error PGRST201). Fix: every profile lookup now names its link:

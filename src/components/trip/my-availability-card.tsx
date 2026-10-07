@@ -208,7 +208,7 @@ export function MyAvailabilityCard({ tripId, myUserId, myLeaveDays, myRanges, on
         )}
 
         <ThemedText type="small" themeColor="textSecondary">
-          Your saved dates appear under your name in Members, where you can remove them.
+          Your saved dates show under Members → More details, where you can tap &quot;Reset dates&quot; to remove them.
         </ThemedText>
       </ThemedView>
     </View>

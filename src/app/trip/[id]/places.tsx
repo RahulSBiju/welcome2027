@@ -17,7 +17,8 @@ import { setVote } from '@/lib/votes';
 type PlaceWithCounts = Place & { location_images: { count: number }[] };
 
 export default function PlacesScreen() {
-  const { id: tripId } = useLocalSearchParams<{ id: string }>();
+  // ?suggest=1 (from the "Suggest a place" button on the trip page) opens the form straight away.
+  const { id: tripId, suggest } = useLocalSearchParams<{ id: string; suggest?: string }>();
   const theme = useTheme();
   const { session } = useSession();
   const myUserId = session!.user.id;
@@ -29,7 +30,7 @@ export default function PlacesScreen() {
   const [error, setError] = useState<string | null>(null);
 
   // Add-place form
-  const [formOpen, setFormOpen] = useState(false);
+  const [formOpen, setFormOpen] = useState(suggest === '1');
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [link, setLink] = useState('');

@@ -130,6 +130,12 @@ export default function TripScreen() {
         refreshControl={<RefreshControl refreshing={false} onRefresh={loadData} />}>
         {loadError && <ThemedText style={{ color: theme.danger }}>{loadError}</ThemedText>}
 
+        {/* Main action after joining: suggest a place (opens the form directly) */}
+        <Button
+          title="📍 Suggest a place"
+          onPress={() => router.push({ pathname: '/trip/[id]/places', params: { id: trip.id, suggest: '1' } })}
+        />
+
         {/* 0. The locked-in plan (📌), if the organiser has pinned anything */}
         <FinalPlanCard trip={trip} pinnedPlaceName={pinnedPlaceName} isOrganiser={isOrganiser} onChanged={loadData} />
 

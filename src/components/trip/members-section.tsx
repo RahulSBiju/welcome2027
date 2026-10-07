@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -19,16 +20,25 @@ type Props = {
   onChanged: () => void;
 };
 
-/** Everyone in the trip, with their leave days and preferred dates in one place. */
+/**
+ * Everyone in the trip. Collapsed (default): a row of initials avatars, so the page stays short
+ * as the group grows. "More details" opens each person's leave days and preferred dates.
+ */
 export function MembersSection({ tripId, myUserId, isOrganiser, members, availability, onChanged }: Props) {
   const theme = useTheme();
+  const [expanded, setExpanded] = useState(false);
   const [confirmingRemoval, setConfirmingRemoval] = useState<string | null>(null);
   const [removing, setRemoving] = useState(false);
+  const [resettingRange, setResettingRange] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function deleteRange(rangeId: string) {
+  const nameOf = (member: TripMember) => member.profiles?.display_name || 'Unnamed';
+
+  async function resetRange(rangeId: string) {
     setError(null);
+    setResettingRange(rangeId);
     const { error: deleteError } = await supabase.from('availability').delete().eq('id', rangeId);
+    setResettingRange(null);
     if (deleteError) {
       setError(deleteError.message);
       return;
@@ -69,88 +79,116 @@ export function MembersSection({ tripId, myUserId, isOrganiser, members, availab
         </ThemedText>
       )}
 
-      {members.map((member) => {
-        const isMe = member.user_id === myUserId;
-        const ranges = availability.filter((a) => a.user_id === member.user_id);
-        const canRemove = isOrganiser && !isMe;
-
-        return (
-          <ThemedView key={member.user_id} type="backgroundElement" style={styles.card}>
-            <View style={styles.headerRow}>
-              <View style={styles.flex}>
-                <ThemedText style={styles.bold}>
-                  {member.profiles?.display_name || 'Unnamed'}
-                  {isMe ? ' (you)' : ''}
-                </ThemedText>
-                <ThemedText type="small" themeColor="textSecondary">
-                  {member.role === 'owner' ? '👑 Organiser' : 'Member'} ·{' '}
-                  {member.leave_days != null ? `${member.leave_days} leave days` : 'Leave days not set'}
+      <ThemedView type="backgroundElement" style={styles.card}>
+        {/* Collapsed view: avatars with initials */}
+        <View style={styles.avatarRow}>
+          {members.map((member) => {
+            const isMe = member.user_id === myUserId;
+            return (
+              <View key={member.user_id} style={styles.avatarItem}>
+                <View>
+                  <Avatar id={member.user_id} name={nameOf(member)} highlighted={isMe} />
+                  {member.role === 'owner' && <ThemedText style={styles.crown}>👑</ThemedText>}
+                </View>
+                <ThemedText type="small" themeColor="textSecondary" numberOfLines={1} style={styles.avatarName}>
+                  {isMe ? 'You' : nameOf(member).split(' ')[0]}
                 </ThemedText>
               </View>
-              {canRemove && confirmingRemoval !== member.user_id && (
-                <Pressable
-                  onPress={() => setConfirmingRemoval(member.user_id)}
-                  hitSlop={8}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Remove ${member.profiles?.display_name ?? 'member'} from trip`}>
-                  <ThemedText type="small" style={{ color: theme.danger }}>
-                    Remove
-                  </ThemedText>
-                </Pressable>
-              )}
-            </View>
+            );
+          })}
+        </View>
 
-            {/* Their preferred dates */}
-            {ranges.length === 0 ? (
-              <ThemedText type="small" themeColor="textSecondary">
-                No dates picked yet
-              </ThemedText>
-            ) : (
-              ranges.map((range) => (
-                <View key={range.id} style={styles.rangeRow}>
-                  <ThemedText type="small" style={styles.flex}>
-                    📅 {formatRange(range.start_date, range.end_date)}
-                  </ThemedText>
-                  {isMe && (
-                    <Pressable
-                      onPress={() => deleteRange(range.id)}
-                      hitSlop={8}
-                      accessibilityRole="button"
-                      accessibilityLabel="Remove these dates">
-                      <ThemedText type="small" style={{ color: theme.danger }}>
-                        ✕
-                      </ThemedText>
-                    </Pressable>
+        <Button
+          title={expanded ? 'Hide details ▴' : 'More details ▾'}
+          variant="tertiary"
+          size="small"
+          onPress={() => setExpanded((e) => !e)}
+          accessibilityState={{ expanded }}
+          style={styles.toggle}
+        />
+
+        {/* Expanded view: everyone's leave days and dates */}
+        {expanded &&
+          members.map((member) => {
+            const isMe = member.user_id === myUserId;
+            const ranges = availability.filter((a) => a.user_id === member.user_id);
+            const canRemove = isOrganiser && !isMe;
+
+            return (
+              <View key={member.user_id} style={[styles.detail, { borderColor: theme.border }]}>
+                <View style={styles.headerRow}>
+                  <Avatar id={member.user_id} name={nameOf(member)} size={32} />
+                  <View style={styles.flex}>
+                    <ThemedText style={styles.bold}>
+                      {nameOf(member)}
+                      {isMe ? ' (you)' : ''}
+                    </ThemedText>
+                    <ThemedText type="small" themeColor="textSecondary">
+                      {member.role === 'owner' ? '👑 Organiser' : 'Member'} ·{' '}
+                      {member.leave_days != null ? `${member.leave_days} leave days` : 'Leave days not set'}
+                    </ThemedText>
+                  </View>
+                  {canRemove && confirmingRemoval !== member.user_id && (
+                    <Button
+                      title="Remove"
+                      variant="danger"
+                      size="small"
+                      onPress={() => setConfirmingRemoval(member.user_id)}
+                      accessibilityLabel={`Remove ${nameOf(member)} from trip`}
+                    />
                   )}
                 </View>
-              ))
-            )}
 
-            {/* Organiser confirms before removing someone */}
-            {confirmingRemoval === member.user_id && (
-              <View style={[styles.confirmBox, { borderColor: theme.danger }]}>
-                <ThemedText type="small">
-                  Remove {member.profiles?.display_name || 'this member'} from the trip? Their dates and votes
-                  will be deleted too.
-                </ThemedText>
-                <View style={styles.confirmButtons}>
-                  <View style={styles.flex}>
-                    <Button
-                      title="Yes, remove"
-                      variant="danger"
-                      loading={removing}
-                      onPress={() => removeMember(member.user_id)}
-                    />
+                {/* Their preferred dates */}
+                {ranges.length === 0 ? (
+                  <ThemedText type="small" themeColor="textSecondary">
+                    No dates picked yet
+                  </ThemedText>
+                ) : (
+                  ranges.map((range) => (
+                    <View key={range.id} style={styles.rangeRow}>
+                      <ThemedText type="small" style={styles.flex}>
+                        📅 {formatRange(range.start_date, range.end_date)}
+                      </ThemedText>
+                      {isMe && (
+                        <Button
+                          title="Reset dates"
+                          variant="secondary"
+                          size="small"
+                          loading={resettingRange === range.id}
+                          onPress={() => resetRange(range.id)}
+                          accessibilityLabel={`Reset dates ${formatRange(range.start_date, range.end_date)}`}
+                        />
+                      )}
+                    </View>
+                  ))
+                )}
+
+                {/* Organiser confirms before removing someone */}
+                {confirmingRemoval === member.user_id && (
+                  <View style={[styles.confirmBox, { borderColor: theme.danger }]}>
+                    <ThemedText type="small">
+                      Remove {nameOf(member)} from the trip? Their dates and votes will be deleted too.
+                    </ThemedText>
+                    <View style={styles.confirmButtons}>
+                      <View style={styles.flex}>
+                        <Button
+                          title="Yes, remove"
+                          variant="danger"
+                          loading={removing}
+                          onPress={() => removeMember(member.user_id)}
+                        />
+                      </View>
+                      <View style={styles.flex}>
+                        <Button title="Cancel" variant="secondary" onPress={() => setConfirmingRemoval(null)} />
+                      </View>
+                    </View>
                   </View>
-                  <View style={styles.flex}>
-                    <Button title="Cancel" variant="secondary" onPress={() => setConfirmingRemoval(null)} />
-                  </View>
-                </View>
+                )}
               </View>
-            )}
-          </ThemedView>
-        );
-      })}
+            );
+          })}
+      </ThemedView>
     </View>
   );
 }
@@ -167,9 +205,38 @@ const styles = StyleSheet.create({
     borderRadius: Spacing.three,
     gap: Spacing.two,
   },
+  avatarRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.three,
+  },
+  avatarItem: {
+    alignItems: 'center',
+    width: 56,
+    gap: Spacing.one,
+  },
+  avatarName: {
+    maxWidth: 56,
+    textAlign: 'center',
+  },
+  crown: {
+    position: 'absolute',
+    top: -10,
+    right: -6,
+    fontSize: 16,
+    lineHeight: 20,
+  },
+  toggle: {
+    alignSelf: 'flex-start',
+  },
+  detail: {
+    gap: Spacing.two,
+    paddingTop: Spacing.three,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
   headerRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     gap: Spacing.two,
   },
   rangeRow: {

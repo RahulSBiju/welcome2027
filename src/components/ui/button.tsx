@@ -6,25 +6,45 @@ import { useTheme } from '@/hooks/use-theme';
 
 type ButtonProps = Omit<PressableProps, 'children'> & {
   title: string;
-  variant?: 'primary' | 'secondary' | 'danger';
+  /**
+   * primary: main action (solid blue) · secondary: grey · danger: grey with red text ·
+   * tertiary: text only, for small inline actions like "More details"
+   */
+  variant?: 'primary' | 'secondary' | 'danger' | 'tertiary';
+  /** small: compact button for inline actions inside cards */
+  size?: 'regular' | 'small';
+  /** Red text, for tertiary actions like "Delete trip". */
+  destructive?: boolean;
   loading?: boolean;
 };
 
-export function Button({ title, variant = 'primary', loading, disabled, style, ...rest }: ButtonProps) {
+export function Button({ title, variant = 'primary', size = 'regular', destructive, loading, disabled, style, ...rest }: ButtonProps) {
   const theme = useTheme();
   const isDisabled = disabled || loading;
 
   // Secondary buttons usually sit on grey cards, so they use the stronger "selected" grey.
-  const backgroundColor = variant === 'primary' ? theme.primary : theme.backgroundSelected;
+  const backgroundColor =
+    variant === 'primary' ? theme.primary : variant === 'tertiary' ? 'transparent' : theme.backgroundSelected;
   const textColor =
-    variant === 'primary' ? theme.onPrimary : variant === 'danger' ? theme.danger : theme.text;
+    variant === 'primary'
+      ? theme.onPrimary
+      : variant === 'danger'
+        ? theme.danger
+        : variant === 'tertiary'
+          ? destructive
+            ? theme.danger
+            : theme.primary
+          : theme.text;
 
   return (
     <Pressable
       accessibilityRole="button"
       disabled={isDisabled}
+      hitSlop={size === 'small' ? 6 : undefined}
       style={(state) => [
         styles.button,
+        size === 'small' && styles.small,
+        variant === 'tertiary' && styles.tertiary,
         { backgroundColor },
         (state.pressed || isDisabled) && styles.dimmed,
         typeof style === 'function' ? style(state) : style,
@@ -33,7 +53,9 @@ export function Button({ title, variant = 'primary', loading, disabled, style, .
       {loading ? (
         <ActivityIndicator color={textColor} />
       ) : (
-        <ThemedText style={[styles.label, { color: textColor }]}>{title}</ThemedText>
+        <ThemedText type={size === 'small' ? 'smallBold' : 'default'} style={[styles.label, { color: textColor }]}>
+          {title}
+        </ThemedText>
       )}
     </Pressable>
   );
@@ -46,6 +68,14 @@ const styles = StyleSheet.create({
     borderRadius: Spacing.three,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  small: {
+    minHeight: 34,
+    paddingHorizontal: Spacing.three,
+    borderRadius: Spacing.two,
+  },
+  tertiary: {
+    paddingHorizontal: Spacing.two,
   },
   label: {
     fontWeight: 600,
