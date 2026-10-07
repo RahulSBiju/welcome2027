@@ -6,6 +6,7 @@ import { ThemedView } from '@/components/themed-view';
 import { Button } from '@/components/ui/button';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { subscribeToComments } from '@/lib/chat';
 import { openLink, splitLinks } from '@/lib/links';
 import { supabase } from '@/lib/supabase';
 import { timeAgo } from '@/lib/time';
@@ -33,7 +34,7 @@ function fetchComments(tripId: string, targetType: string, targetId?: string) {
   return targetId ? query.eq('target_id', targetId) : query.is('target_id', null);
 }
 
-/** A comment thread. Links typed into a comment become tappable. */
+/** A comment thread that updates live. Links typed into a comment become tappable. */
 export function CommentsSection({ tripId, myUserId, targetType, targetId, refreshKey, emptyText }: Props) {
   const theme = useTheme();
   const [comments, setComments] = useState<Comment[]>([]);
@@ -55,6 +56,17 @@ export function CommentsSection({ tripId, myUserId, targetType, targetId, refres
       active = false;
     };
   }, [tripId, targetType, targetId, refreshKey, version]);
+
+  // Live: when anyone posts in this thread, reload it straight away.
+  useEffect(
+    () =>
+      subscribeToComments(tripId, (comment) => {
+        if (comment.target_type === targetType && (comment.target_id ?? undefined) === targetId) {
+          setVersion((v) => v + 1);
+        }
+      }),
+    [tripId, targetType, targetId]
+  );
 
   async function postComment() {
     const body = draft.trim();

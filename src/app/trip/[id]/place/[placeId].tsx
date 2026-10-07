@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 
 import { CommentsSection } from '@/components/comments-section';
+import { PlaceVibesModal } from '@/components/place-vibes-modal';
 import { PhotoGallery } from '@/components/photo-gallery';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -12,6 +13,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { useSession } from '@/lib/auth-context';
 import { openLink, shortHost } from '@/lib/links';
 import { pinPlace } from '@/lib/pin';
+import { vibesWindow } from '@/lib/place-vibes';
 import { supabase } from '@/lib/supabase';
 import type { Place, Trip } from '@/lib/types';
 import { setVote } from '@/lib/votes';
@@ -36,6 +38,7 @@ export default function PlaceDetailScreen() {
   const [place, setPlace] = useState<Place | null>(null);
   const [trip, setTrip] = useState<Trip | null>(null);
   const [pinning, setPinning] = useState(false);
+  const [showVibes, setShowVibes] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -103,11 +106,17 @@ export default function PlaceDetailScreen() {
   }
 
   const votes = place.location_votes.length;
+  const vibesTarget = { id: place.id, name: place.name };
   const hasVoted = place.location_votes.some((v) => v.user_id === myUserId);
 
   return (
     <ThemedView style={styles.flex}>
       <Stack.Screen options={{ title: place.name }} />
+      <PlaceVibesModal
+        place={showVibes ? vibesTarget : null}
+        window={vibesWindow(trip?.pinned_start, trip?.pinned_end)}
+        onClose={() => setShowVibes(false)}
+      />
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={100}>
         <ScrollView
           contentContainerStyle={styles.content}
@@ -148,6 +157,12 @@ export default function PlaceDetailScreen() {
                 </ThemedText>
               </Pressable>
             )}
+            <Button
+              title="✨ Place vibes: weather & fun facts"
+              variant="secondary"
+              size="small"
+              onPress={() => setShowVibes(true)}
+            />
             {trip?.pinned_location_id === place.id && (
               <ThemedText type="smallBold" style={{ color: theme.primary }}>
                 📌 This is the final destination!

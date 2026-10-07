@@ -1,17 +1,28 @@
-import { Stack, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { KeyboardAvoidingView, Platform, RefreshControl, ScrollView, StyleSheet } from 'react-native';
 
 import { CommentsSection } from '@/components/comments-section';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useSession } from '@/lib/auth-context';
+import { markChatRead } from '@/lib/chat';
 
-/** General discussion for the whole trip: budget, travel plans, ideas… */
+/** General discussion for the whole trip: budget, travel plans, ideas… (updates live) */
 export default function DiscussionScreen() {
   const { id: tripId } = useLocalSearchParams<{ id: string }>();
   const { session } = useSession();
   const [refreshKey, setRefreshKey] = useState(0);
+
+  // Opening the chat clears the unread badge; leaving it counts everything seen while here as read.
+  useFocusEffect(
+    useCallback(() => {
+      markChatRead(tripId);
+      return () => {
+        markChatRead(tripId);
+      };
+    }, [tripId])
+  );
 
   return (
     <ThemedView style={styles.flex}>

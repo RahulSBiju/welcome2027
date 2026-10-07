@@ -29,9 +29,11 @@ type Props = {
   size?: number;
   /** Draws a ring around the avatar (used for "you"). */
   highlighted?: boolean;
+  /** Greyed out (used for "not free" in Best dates). */
+  muted?: boolean;
 };
 
-export function Avatar({ id, name, size = 44, highlighted }: Props) {
+export function Avatar({ id, name, size = 44, highlighted, muted }: Props) {
   const theme = useTheme();
   return (
     <View
@@ -41,8 +43,14 @@ export function Avatar({ id, name, size = 44, highlighted }: Props) {
         styles.circle,
         { width: size, height: size, borderRadius: size / 2, backgroundColor: colourFor(id) },
         highlighted && { borderWidth: 3, borderColor: theme.primary },
+        muted && { backgroundColor: theme.backgroundSelected, opacity: 0.55 },
       ]}>
-      <ThemedText style={[styles.initials, { fontSize: size * 0.38, lineHeight: size * 0.46 }]}>
+      <ThemedText
+        style={[
+          styles.initials,
+          { fontSize: size * 0.38, lineHeight: size * 0.46 },
+          muted && { color: theme.textSecondary },
+        ]}>
         {initialsOf(name)}
       </ThemedText>
     </View>

@@ -2,6 +2,7 @@ import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 
+import { PlaceVibesModal } from '@/components/place-vibes-modal';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Button } from '@/components/ui/button';
@@ -10,6 +11,7 @@ import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useSession } from '@/lib/auth-context';
 import { normaliseLink, openLink, shortHost } from '@/lib/links';
+import { vibesWindow } from '@/lib/place-vibes';
 import { supabase } from '@/lib/supabase';
 import type { Place, Trip } from '@/lib/types';
 import { setVote } from '@/lib/votes';
@@ -26,6 +28,8 @@ export default function PlacesScreen() {
   const [places, setPlaces] = useState<PlaceWithCounts[]>([]);
   const [commentCounts, setCommentCounts] = useState<Record<string, number>>({});
   const [pinnedPlaceId, setPinnedPlaceId] = useState<string | null>(null);
+  const [pinnedDates, setPinnedDates] = useState<{ start: string | null; end: string | null }>({ start: null, end: null });
+  const [vibesPlace, setVibesPlace] = useState<{ id: string; name: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -52,7 +56,9 @@ export default function PlacesScreen() {
       supabase.from('comments').select('target_id').eq('trip_id', tripId).eq('target_type', 'location'),
       supabase.from('trips').select('*').eq('id', tripId).maybeSingle(),
     ]);
-    setPinnedPlaceId((tripResult.data as Trip | null)?.pinned_location_id ?? null);
+    const loadedTrip = tripResult.data as Trip | null;
+    setPinnedPlaceId(loadedTrip?.pinned_location_id ?? null);
+    setPinnedDates({ start: loadedTrip?.pinned_start ?? null, end: loadedTrip?.pinned_end ?? null });
     if (placesResult.error) {
       setError(placesResult.error.message);
     } else {
@@ -86,13 +92,17 @@ export default function PlacesScreen() {
 
     setFormError(null);
     setSaving(true);
-    const { error: insertError } = await supabase.from('locations').insert({
-      trip_id: tripId,
-      added_by: myUserId,
-      name: trimmedName,
-      description: description.trim() || null,
-      link_url: cleanLink,
-    });
+    const { data: added, error: insertError } = await supabase
+      .from('locations')
+      .insert({
+        trip_id: tripId,
+        added_by: myUserId,
+        name: trimmedName,
+        description: description.trim() || null,
+        link_url: cleanLink,
+      })
+      .select('id')
+      .single();
     setSaving(false);
 
     if (insertError) {
@@ -104,6 +114,8 @@ export default function PlacesScreen() {
     setLink('');
     setFormOpen(false);
     loadPlaces();
+    // Pop up "Place vibes" for the person who suggested it (others open it from the place page).
+    setVibesPlace({ id: added.id, name: trimmedName });
   }
 
   async function toggleVote(place: Place) {
@@ -146,6 +158,11 @@ export default function PlacesScreen() {
   return (
     <ThemedView style={styles.flex}>
       <Stack.Screen options={{ title: 'Places' }} />
+      <PlaceVibesModal
+        place={vibesPlace}
+        window={vibesWindow(pinnedDates.start, pinnedDates.end)}
+        onClose={() => setVibesPlace(null)}
+      />
 
       <ScrollView
         contentContainerStyle={styles.content}

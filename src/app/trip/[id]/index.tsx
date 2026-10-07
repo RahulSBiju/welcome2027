@@ -4,6 +4,7 @@ import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, View } from 
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { ChatHeaderButton } from '@/components/chat-header-button';
 import { BestDatesCard } from '@/components/trip/best-dates-card';
 import { FinalPlanCard } from '@/components/trip/final-plan-card';
 import { InviteCard } from '@/components/trip/invite-card';
@@ -27,7 +28,6 @@ export default function TripScreen() {
   const [members, setMembers] = useState<TripMember[]>([]);
   const [availability, setAvailability] = useState<Availability[]>([]);
   const [placeCount, setPlaceCount] = useState(0);
-  const [chatCount, setChatCount] = useState(0);
   const [pinnedPlaceName, setPinnedPlaceName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -35,7 +35,7 @@ export default function TripScreen() {
 
   const loadData = useCallback(async () => {
     setLoadError(null);
-    const [tripResult, membersResult, availabilityResult, placesResult, chatResult] = await Promise.all([
+    const [tripResult, membersResult, availabilityResult, placesResult] = await Promise.all([
       supabase.from('trips').select('*').eq('id', id).maybeSingle(),
       supabase
         .from('trip_members')
@@ -48,11 +48,6 @@ export default function TripScreen() {
         .eq('trip_id', id)
         .order('start_date'),
       supabase.from('locations').select('id', { count: 'exact', head: true }).eq('trip_id', id),
-      supabase
-        .from('comments')
-        .select('id', { count: 'exact', head: true })
-        .eq('trip_id', id)
-        .eq('target_type', 'trip'),
     ]);
 
     const firstError = tripResult.error ?? membersResult.error ?? availabilityResult.error;
@@ -78,7 +73,6 @@ export default function TripScreen() {
       setMembers(membersResult.data as unknown as TripMember[]);
       setAvailability(availabilityResult.data as Availability[]);
       setPlaceCount(placesResult.count ?? 0);
-      setChatCount(chatResult.count ?? 0);
     }
     setLoading(false);
   }, [id]);
@@ -122,7 +116,12 @@ export default function TripScreen() {
 
   return (
     <ThemedView style={styles.flex}>
-      <Stack.Screen options={{ title: trip.name }} />
+      <Stack.Screen
+        options={{
+          title: trip.name,
+          headerRight: () => <ChatHeaderButton tripId={trip.id} userId={myUserId} />,
+        }}
+      />
 
       <ScrollView
         contentContainerStyle={styles.content}
@@ -167,7 +166,7 @@ export default function TripScreen() {
           onChanged={loadData}
         />
 
-        {/* 4. Places, group chat, packing */}
+        {/* 4. Places, packing (Group chat lives in the header: 💬 with an unread badge) */}
         <View style={styles.navList}>
           <NavCard
             title="📍 Places"
@@ -177,15 +176,6 @@ export default function TripScreen() {
                 : `${placeCount} ${placeCount === 1 ? 'suggestion' : 'suggestions'} · vote for your favourites`
             }
             onPress={() => router.push({ pathname: '/trip/[id]/places', params: { id: trip.id } })}
-          />
-          <NavCard
-            title="💬 Group chat"
-            subtitle={
-              chatCount === 0
-                ? 'Talk budget, travel and plans with the gang'
-                : `${chatCount} ${chatCount === 1 ? 'message' : 'messages'}`
-            }
-            onPress={() => router.push({ pathname: '/trip/[id]/discussion', params: { id: trip.id } })}
           />
           <NavCard
             title="🎒 Packing list"

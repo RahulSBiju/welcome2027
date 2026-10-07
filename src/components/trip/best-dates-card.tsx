@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { Avatar } from '@/components/ui/avatar';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { findBestStretches } from '@/lib/best-dates';
@@ -32,6 +33,9 @@ export function BestDatesCard({ trip, isOrganiser, members, availability, onChan
   // List names in the same order as the Members section.
   const memberOrder = (userId: string) => members.findIndex((m) => m.user_id === userId);
   const inMemberOrder = (ids: string[]) => [...ids].sort((a, b) => memberOrder(a) - memberOrder(b));
+
+  // Bars are drawn relative to the longest stretch shown.
+  const longest = Math.max(1, ...stretches.map((s) => s.days));
 
   async function lockIn(start: string, end: string) {
     setError(null);
@@ -92,9 +96,42 @@ export function BestDatesCard({ trip, isOrganiser, members, availability, onChan
                     {everyone ? 'Everyone 🎉' : `${stretch.freeUserIds.length} of ${members.length}`}
                   </ThemedText>
                 </View>
-                <ThemedText type="small" themeColor="textSecondary">
-                  Free: {inMemberOrder(stretch.freeUserIds).map(nameOf).join(', ')}
-                </ThemedText>
+                {/* Bar: length = number of days (vs the longest stretch), strength = share of people free */}
+                <View
+                  style={styles.barRow}
+                  accessible
+                  accessibilityLabel={`${stretch.days} days, ${stretch.freeUserIds.length} of ${members.length} free`}>
+                  <View style={[styles.barTrack, { backgroundColor: theme.backgroundSelected }]}>
+                    <View
+                      style={[
+                        styles.barFill,
+                        {
+                          width: `${Math.max(8, (stretch.days / longest) * 100)}%`,
+                          backgroundColor: theme.primary,
+                          opacity: 0.35 + 0.65 * (stretch.freeUserIds.length / members.length),
+                        },
+                      ]}
+                    />
+                  </View>
+                  <ThemedText type="smallBold" style={styles.barLabel}>
+                    {stretch.days} {stretch.days === 1 ? 'day' : 'days'}
+                  </ThemedText>
+                </View>
+
+                {/* Who's in: full colour = free, greyed out = not free / no dates */}
+                <View style={styles.avatarRow}>
+                  {members.map((m) => {
+                    const free = stretch.freeUserIds.includes(m.user_id);
+                    return (
+                      <View
+                        key={m.user_id}
+                        accessible
+                        accessibilityLabel={`${nameOf(m.user_id)}: ${free ? 'free' : 'not free'}`}>
+                        <Avatar id={m.user_id} name={nameOf(m.user_id)} size={30} muted={!free} />
+                      </View>
+                    );
+                  })}
+                </View>
                 {notFree.length > 0 && (
                   <ThemedText type="small" themeColor="textSecondary">
                     Not free / no dates: {notFree.map((m) => m.profiles?.display_name || 'Unnamed').join(', ')}
@@ -169,6 +206,32 @@ const styles = StyleSheet.create({
   bold: {
     fontWeight: 600,
     flexShrink: 1,
+  },
+  barRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    marginTop: Spacing.one,
+  },
+  barTrack: {
+    flex: 1,
+    height: 12,
+    borderRadius: 6,
+    overflow: 'hidden',
+  },
+  barFill: {
+    height: '100%',
+    borderRadius: 6,
+  },
+  barLabel: {
+    minWidth: 52,
+    textAlign: 'right',
+  },
+  avatarRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.one,
+    marginVertical: Spacing.one,
   },
   lockLink: {
     alignSelf: 'flex-start',

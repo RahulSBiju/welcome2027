@@ -50,6 +50,34 @@ proposes trip dates, and adds comments, links and photos.
     toast. Not yet tested signed in: the real rename/delete against the database, the bell on a phone.
   - Note: deleting a trip removes all its rows, but uploaded photo **files** stay in Storage (only their uploader can
     delete them). That's harmless at this size; it could get a cleanup job later.
+- **Rahul's ideas round 2 (7 Oct 2026) → Update 8:**
+  - **Icons:** keep the current icons. Rahul will supply custom icons together with the Figma UI refresh.
+  1. ✅ **"✨ Place vibes" pop-up**, done the **free way** (Rahul doesn't want to pay for an AI API on a pet project).
+     **No accounts, keys or cost:**
+     - Weather: **Open-Meteo** historical archive. Real min/max °C and the share of rainy days for the same dates over
+       the last 2 years. Dates used: the pinned trip dates, otherwise 20–31 Dec.
+     - "The lowdown": **Wikivoyage** intro · fun fact + photo: **Wikipedia** (credited, CC BY-SA)
+     - Casual buddy tone comes from **hand-written lines** chosen per place (openers, weather quips like
+       *"Hoodie weather. Layers, my friend 🧥"*, snow lines for freezing places, fun-fact prefixes like *"Pub-quiz ammo 🍻"*)
+     - Place matching: Wikivoyage picks the tourist destination and its coordinates pick the map match. A region the user
+       types ("Manali, Tamil Nadu") always wins. Tested: Gokarna ✓, Manali → Himachal ✓ (first attempt wrongly gave
+       Chennai, now fixed), Manali, Tamil Nadu → Chennai ✓, Goa ✓, Paris ✓, a nonsense name → friendly "couldn't find much" ✓
+     - Fun facts skip dry population/census sentences, and sentence splitting ignores decimals ("1.4 million")
+     - **Pop-up:** opens automatically **only for the person who suggested the place** (Rahul's choice). Everyone gets a
+       "✨ Place vibes" button on the place page. Close with ✕, "Got it 👍" or tapping outside.
+     - Saved once per place in `locations.vibes` (via the `save_place_vibes` RPC) and refreshed if the pinned dates change.
+     - Files: `src/lib/place-vibes.ts`, `src/components/place-vibes-modal.tsx`
+     - Parked: an AI-written version (Claude API), if Rahul ever wants to pay (~$0.01–0.03 per place on Opus 5.5)
+  2. ✅ **Best dates as a chart.** Each stretch shows a bar (length = number of days relative to the longest stretch,
+     strength = share of people free) plus initials avatars (**colour = free, greyed out = not free**). Leave warnings and
+     "📌 Lock in" are kept. (`Avatar` gained `muted`.)
+  3. ✅ **💬 Group chat in the trip page header** with a **red unread-count badge** (`src/components/chat-header-button.tsx`).
+     The old Group chat card is removed. **Live chat** (Rahul's choice): every comment thread (Group chat and place
+     comments) updates instantly via Supabase Realtime (`subscribeToComments` in `src/lib/chat.ts`). The badge also bumps
+     live. Unread is stored per person in the database (`chat_reads` + `mark_chat_read` RPC, using server time), so it
+     works across devices. The chat marks itself read when opened and again when left.
+  - **DB update 004** [`supabase/004_chat_unread_live_vibes.sql`](supabase/004_chat_unread_live_vibes.sql) ⏳ Rahul to run.
+    Before it runs, the app keeps working: no badge, no live updates, vibes not saved (looked up fresh each time).
 - **Then:** Rahul beta-tests with 2–3 friends and comes back with feedback and reviews.
 - **Later (optional):** overall UI polish from Figma screens that Rahul will provide.
 - **Plan agreed with Rahul:** friends get the link only once the app is complete.
@@ -160,6 +188,8 @@ Shake the phone, then tap **Reload** if the app gets stuck.
    (confirm with the read-only `supabase/check_002.sql`)
 3. `supabase/003_pin_packing_push.sql`: pin columns, `packing_items`, `push_subscriptions`, push triggers,
    extended cleanup trigger ✅ run by Rahul (tables/columns confirmed via the API)
+4. `supabase/004_chat_unread_live_vibes.sql`: `chat_reads` + `mark_chat_read`, adds `comments` to Realtime,
+   `locations.vibes` + `save_place_vibes` ⏳ waiting to be run
 
 **Database functions called from the app:** `create_trip(name)` and `join_trip(code)`
 
@@ -351,6 +381,8 @@ password reset, Git backup, email service, push notifications, pin button, packi
       Checked on the live site.
 - [x] **Update 2 deployed (6 Oct 2026):** Best dates, organiser removes members, QR/link invites,
       reordered trip page, Places & votes (Phase 4)
+- [x] **Update 8 deployed (7 Oct 2026): ideas round 2.** Free "Place vibes" pop-up, Best dates bar chart with avatars,
+      💬 header chat button with unread badge, live comments (needs DB update 004)
 - [x] **Update 7 deployed (7 Oct 2026): feedback round 1.** Reset dates button, delete/leave/rename trips on the home
       screen, header bell + power icons with toast, members accordion with avatars, "Suggest a place" at the top
 - [x] **Update 6 deployed (6 Oct 2026): bug fix, Places list error.** Update 003 added `trips.pinned_location_id`, which
